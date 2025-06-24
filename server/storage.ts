@@ -51,7 +51,15 @@ export class MemStorage implements IStorage {
 
   async createLead(insertLead: InsertLead): Promise<Lead> {
     const id = this.currentLeadId++;
-    const lead: Lead = { ...insertLead, id, createdAt: new Date() };
+    const lead: Lead = { 
+      ...insertLead, 
+      id, 
+      createdAt: new Date(),
+      company: insertLead.company || null,
+      phone: insertLead.phone || null,
+      planInterest: insertLead.planInterest || null,
+      message: insertLead.message || null
+    };
     this.leads.set(id, lead);
     return lead;
   }
@@ -74,7 +82,8 @@ export class MemStorage implements IStorage {
       ...insertSubmission, 
       id, 
       status: "new",
-      createdAt: new Date() 
+      createdAt: new Date(),
+      company: insertSubmission.company || null
     };
     this.contactSubmissions.set(id, submission);
     return submission;
