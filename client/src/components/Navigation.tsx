@@ -1,17 +1,59 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Bot, Menu, X } from "lucide-react";
+import { Bot, Menu, X, ChevronDown } from "lucide-react";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [location] = useLocation();
 
   const navItems = [
-    { name: "Features", href: "/features" },
-    { name: "Integrations", href: "/integrations" },
+    { 
+      name: "Platform", 
+      href: "/platform",
+      submenu: [
+        { name: "Features", href: "/features" },
+        { name: "Integrations", href: "/integrations" },
+        { name: "AI Training", href: "/ai-training" },
+        { name: "Flow Designer", href: "/flow-designer" },
+        { name: "Analytics", href: "/analytics" }
+      ]
+    },
+    { 
+      name: "Solutions", 
+      href: "/solutions",
+      submenu: [
+        { name: "E-commerce", href: "/solutions/ecommerce" },
+        { name: "Healthcare", href: "/solutions/healthcare" },
+        { name: "Financial Services", href: "/solutions/finance" },
+        { name: "Real Estate", href: "/solutions/realestate" },
+        { name: "Customer Support", href: "/solutions/support" }
+      ]
+    },
     { name: "Pricing", href: "/pricing" },
-    { name: "Resources", href: "/resources" },
+    { 
+      name: "Resources", 
+      href: "/resources",
+      submenu: [
+        { name: "Documentation", href: "/docs" },
+        { name: "API Reference", href: "/api" },
+        { name: "Case Studies", href: "/case-studies" },
+        { name: "Blog", href: "/blog" },
+        { name: "Community", href: "/community" }
+      ]
+    },
+    { 
+      name: "Company", 
+      href: "/company",
+      submenu: [
+        { name: "About Us", href: "/about" },
+        { name: "Careers", href: "/careers" },
+        { name: "Partners", href: "/partners" },
+        { name: "Security", href: "/security" },
+        { name: "Contact", href: "/contact" }
+      ]
+    }
   ];
 
   const isActive = (href: string) => location === href;
@@ -31,17 +73,45 @@ const Navigation = () => {
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
               {navItems.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`transition-colors duration-200 ${
-                    isActive(item.href)
-                      ? "text-primary font-medium"
-                      : "text-text-muted hover:text-primary"
-                  }`}
+                <div 
+                  key={item.name} 
+                  className="relative"
+                  onMouseEnter={() => item.submenu && setActiveDropdown(item.name)}
+                  onMouseLeave={() => setActiveDropdown(null)}
                 >
-                  {item.name}
-                </Link>
+                  {item.submenu ? (
+                    <div className="flex items-center cursor-pointer text-text-muted hover:text-primary transition-colors duration-200">
+                      <span>{item.name}</span>
+                      <ChevronDown className="w-4 h-4 ml-1" />
+                    </div>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      className={`transition-colors duration-200 ${
+                        isActive(item.href)
+                          ? "text-primary font-medium"
+                          : "text-text-muted hover:text-primary"
+                      }`}
+                    >
+                      {item.name}
+                    </Link>
+                  )}
+                  
+                  {/* Dropdown Menu */}
+                  {item.submenu && activeDropdown === item.name && (
+                    <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                      {item.submenu.map((subItem) => (
+                        <Link
+                          key={subItem.name}
+                          href={subItem.href}
+                          className="block px-4 py-2 text-text-muted hover:text-primary hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          {subItem.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -71,20 +141,39 @@ const Navigation = () => {
         {/* Mobile Navigation */}
         {isOpen && (
           <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t max-h-96 overflow-y-auto">
               {navItems.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
-                    isActive(item.href)
-                      ? "text-primary bg-primary/10"
-                      : "text-text-muted hover:text-primary hover:bg-gray-50"
-                  }`}
-                  onClick={() => setIsOpen(false)}
-                >
-                  {item.name}
-                </Link>
+                <div key={item.name}>
+                  {item.submenu ? (
+                    <div>
+                      <div className="px-3 py-2 text-base font-medium text-text-primary border-b border-gray-100">
+                        {item.name}
+                      </div>
+                      {item.submenu.map((subItem) => (
+                        <Link
+                          key={subItem.name}
+                          href={subItem.href}
+                          className="block pl-6 pr-3 py-2 text-sm text-text-muted hover:text-primary hover:bg-gray-50 transition-colors duration-200"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          {subItem.name}
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
+                        isActive(item.href)
+                          ? "text-primary bg-primary/10"
+                          : "text-text-muted hover:text-primary hover:bg-gray-50"
+                      }`}
+                      onClick={() => setIsOpen(false)}
+                    >
+                      {item.name}
+                    </Link>
+                  )}
+                </div>
               ))}
               <div className="pt-4 pb-3 border-t border-gray-200">
                 <div className="space-y-2">
