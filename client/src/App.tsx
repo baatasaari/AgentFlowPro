@@ -21,6 +21,15 @@ import About from "@/pages/About";
 import Security from "@/pages/Security";
 import Contact from "@/pages/Contact";
 
+// Platform-specific integration pages
+import WhatsAppIntegration from "@/pages/integrations/WhatsAppIntegration";
+import InstagramIntegration from "@/pages/integrations/InstagramIntegration";
+import FacebookIntegration from "@/pages/integrations/FacebookIntegration";
+import TelegramIntegration from "@/pages/integrations/TelegramIntegration";
+import DiscordIntegration from "@/pages/integrations/DiscordIntegration";
+import LinkedInIntegration from "@/pages/integrations/LinkedInIntegration";
+import CustomIntegration from "@/pages/integrations/CustomIntegration";
+
 function Router() {
   return (
     <Switch>
