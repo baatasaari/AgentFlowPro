@@ -13,11 +13,23 @@ const Navigation = () => {
       name: "Platform", 
       href: "/platform",
       submenu: [
-        { name: "Features", href: "/features" },
-        { name: "Integrations", href: "/integrations" },
-        { name: "AI Training", href: "/ai-training" },
+        { name: "Core Features", href: "/features" },
+        { name: "AI Training Studio", href: "/ai-training" },
         { name: "Flow Designer", href: "/flow-designer" },
-        { name: "Analytics", href: "/analytics" }
+        { name: "Analytics Dashboard", href: "/analytics" }
+      ]
+    },
+    { 
+      name: "Integrations", 
+      href: "/integrations",
+      submenu: [
+        { name: "WhatsApp Business", href: "/integrations/whatsapp" },
+        { name: "Instagram Messaging", href: "/integrations/instagram" },
+        { name: "Facebook Messenger", href: "/integrations/facebook" },
+        { name: "Telegram Bots", href: "/integrations/telegram" },
+        { name: "Discord Communities", href: "/integrations/discord" },
+        { name: "LinkedIn Messaging", href: "/integrations/linkedin" },
+        { name: "Custom API", href: "/integrations/custom" }
       ]
     },
     { 

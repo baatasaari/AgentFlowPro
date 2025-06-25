@@ -18,7 +18,7 @@ const Hero = () => {
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <Button className="btn-primary flex items-center justify-center">
                 <Rocket className="w-4 h-4 mr-2" />
-                Start Free 14-Day Trial
+                Start Free 7-Day Trial
               </Button>
               <Button variant="outline" className="btn-secondary flex items-center justify-center">
                 <Play className="w-4 h-4 mr-2" />

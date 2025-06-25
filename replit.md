@@ -110,6 +110,10 @@ AgentFlow is a full-stack web application that provides an enterprise AI platfor
 ## Changelog
 - June 24, 2025: Initial setup
 - June 24, 2025: Created comprehensive multi-page website with detailed navigation structure including Platform, Solutions, Resources, and Company sections with 15+ pages total
+- June 25, 2025: Updated all content to focus on agentic AI capabilities, emphasizing autonomous decision-making and self-directed agents
+- June 25, 2025: Added dedicated platform-specific integration pages (WhatsApp, Instagram, Facebook, Telegram, Discord, LinkedIn, Custom API) with detailed agentic capabilities for each platform
+- June 25, 2025: Updated trial period from 14 days to 7 days across all CTAs
+- June 25, 2025: Integrated PostgreSQL database and updated storage layer from in-memory to database operations
 
 ## User Preferences
 

@@ -34,6 +34,15 @@ function Router() {
       <Route path="/flow-designer" component={FlowDesigner} />
       <Route path="/analytics" component={Analytics} />
       
+      {/* Platform-Specific Integration Pages */}
+      <Route path="/integrations/whatsapp" component={WhatsAppIntegration} />
+      <Route path="/integrations/instagram" component={InstagramIntegration} />
+      <Route path="/integrations/facebook" component={FacebookIntegration} />
+      <Route path="/integrations/telegram" component={TelegramIntegration} />
+      <Route path="/integrations/discord" component={DiscordIntegration} />
+      <Route path="/integrations/linkedin" component={LinkedInIntegration} />
+      <Route path="/integrations/custom" component={CustomIntegration} />
+      
       {/* Solutions Pages */}
       <Route path="/solutions" component={Solutions} />
       <Route path="/solutions/:industry" component={Solutions} />
