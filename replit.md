@@ -114,6 +114,7 @@ AgentFlow is a full-stack web application that provides an enterprise AI platfor
 - June 25, 2025: Added dedicated platform-specific integration pages (WhatsApp, Instagram, Facebook, Telegram, Discord, LinkedIn, Custom API) with detailed agentic capabilities for each platform
 - June 25, 2025: Updated trial period from 14 days to 7 days across all CTAs
 - June 25, 2025: Integrated PostgreSQL database and updated storage layer from in-memory to database operations
+- June 25, 2025: Implemented comprehensive A/B testing system for conversion optimization with variant testing for CTAs, pricing displays, and value propositions
 
 ## User Preferences
 

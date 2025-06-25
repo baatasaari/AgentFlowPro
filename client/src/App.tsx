@@ -29,6 +29,7 @@ import TelegramIntegration from "@/pages/integrations/TelegramIntegration";
 import DiscordIntegration from "@/pages/integrations/DiscordIntegration";
 import LinkedInIntegration from "@/pages/integrations/LinkedInIntegration";
 import CustomIntegration from "@/pages/integrations/CustomIntegration";
+import ABTestDashboard from "@/components/ABTestDashboard";
 
 function Router() {
   return (
@@ -74,6 +75,9 @@ function Router() {
       <Route path="/partners" component={About} />
       <Route path="/security" component={Security} />
       <Route path="/contact" component={Contact} />
+      
+      {/* A/B Testing Dashboard (Admin) */}
+      <Route path="/admin/ab-testing" component={ABTestDashboard} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />

@@ -1,6 +1,7 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import Pricing from "@/components/Pricing";
+import { useABTest } from "@/lib/abTesting";
 import CTA from "@/components/CTA";
 
 const PricingPage = () => {
