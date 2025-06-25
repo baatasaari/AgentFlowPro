@@ -5,6 +5,12 @@ import { useABTest } from "@/lib/abTesting";
 import CTA from "@/components/CTA";
 
 const PricingPage = () => {
+  const pricingTest = useABTest('pricing_display_test');
+
+  const handlePricingConversion = () => {
+    pricingTest.trackConversion('pricing_page_conversion');
+  };
+
   return (
     <div className="min-h-screen">
       <Navigation />
@@ -20,7 +26,10 @@ const PricingPage = () => {
             </p>
           </div>
         </div>
-        <Pricing />
+        <Pricing 
+          showMonthlyDefault={pricingTest.variant?.metadata?.showMonthly ?? true}
+          onConversion={handlePricingConversion}
+        />
         <CTA />
       </div>
       <Footer />

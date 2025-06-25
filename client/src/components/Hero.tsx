@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Rocket, Play, CheckCircle } from "lucide-react";
+import { useABTest } from "@/lib/abTesting";
 
 const Hero = () => {
   const ctaTest = useABTest('hero_cta_test');

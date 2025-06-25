@@ -2,8 +2,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Shield, Lock, Headphones } from "lucide-react";
 import { PRICING_PLANS } from "@/lib/constants";
+import { useState } from "react";
 
-const Pricing = () => {
+interface PricingProps {
+  showMonthlyDefault?: boolean;
+  onConversion?: () => void;
+}
+
+const Pricing = ({ showMonthlyDefault = true, onConversion }: PricingProps) => {
+  const [isMonthly, setIsMonthly] = useState(showMonthlyDefault);
+
+  const handlePlanSelect = (planName: string) => {
+    onConversion?.();
+    // Track specific plan selection
+    console.log(`Plan selected: ${planName}, Billing: ${isMonthly ? 'Monthly' : 'Annual'}`);
+  };
   return (
     <section className="py-20 bg-secondary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -11,9 +24,36 @@ const Pricing = () => {
           <h2 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">
             Simple, Transparent Pricing
           </h2>
-          <p className="text-xl text-text-muted max-w-3xl mx-auto">
+          <p className="text-xl text-text-muted max-w-3xl mx-auto mb-8">
             Choose the plan that fits your business needs. All plans include core features with scalable add-ons.
           </p>
+          
+          {/* Billing Toggle */}
+          <div className="flex items-center justify-center mb-8">
+            <span className={`mr-3 ${isMonthly ? 'text-text-primary font-semibold' : 'text-text-muted'}`}>
+              Monthly
+            </span>
+            <button
+              onClick={() => setIsMonthly(!isMonthly)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                isMonthly ? 'bg-gray-300' : 'bg-primary'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  isMonthly ? 'translate-x-1' : 'translate-x-6'
+                }`}
+              />
+            </button>
+            <span className={`ml-3 ${!isMonthly ? 'text-text-primary font-semibold' : 'text-text-muted'}`}>
+              Annual
+            </span>
+            {!isMonthly && (
+              <span className="ml-2 inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                Save 20%
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -28,9 +68,20 @@ const Pricing = () => {
                 <CardTitle className="text-xl font-bold text-text-primary mb-2">{plan.name}</CardTitle>
                 <p className="text-text-muted mb-4">{plan.description}</p>
                 <div className="text-4xl font-bold text-text-primary mb-2">
-                  {plan.price ? `$${plan.price}` : "Custom"}
-                  {plan.price && <span className="text-lg text-text-muted">/month</span>}
+                  {plan.price ? (
+                    <>
+                      ${isMonthly ? plan.price : Math.round(plan.price * 12 * 0.8 / 12)}
+                      <span className="text-lg text-text-muted">/month</span>
+                    </>
+                  ) : (
+                    "Custom"
+                  )}
                 </div>
+                {!isMonthly && plan.price && (
+                  <p className="text-sm text-green-600 mb-2">
+                    ${Math.round(plan.price * 12 * 0.8)} billed annually
+                  </p>
+                )}
                 <p className="text-sm text-text-muted">
                   {plan.price ? `Up to ${plan.price === 99 ? '1,000' : '10,000'} conversations/month` : 'Unlimited conversations'}
                 </p>
