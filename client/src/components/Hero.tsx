@@ -8,12 +8,12 @@ const Hero = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="max-w-xl">
             <h1 className="text-4xl lg:text-5xl font-bold text-text-primary leading-tight mb-6">
-              Transform Customer Conversations with{" "}
-              <span className="text-primary">Enterprise AI Agents</span>
+              Deploy Autonomous AI Agents That{" "}
+              <span className="text-primary">Think, Decide & Act</span>
             </h1>
             <p className="text-xl text-text-muted mb-8 leading-relaxed">
-              Deploy intelligent conversational agents across WhatsApp, Telegram, Discord, and more. 
-              Automate customer interactions while maintaining personalized, context-aware conversations that drive results.
+              Revolutionary agentic AI that goes beyond conversations. Our autonomous agents analyze situations, 
+              make intelligent decisions, execute complex workflows, and drive business outcomes—all without human intervention.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <Button className="btn-primary flex items-center justify-center">
@@ -39,7 +39,7 @@ const Hero = () => {
             <div className="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-lg p-4 border border-gray-200">
               <div className="flex items-center space-x-3">
                 <div className="w-3 h-3 bg-accent rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium">AI Agent Active</span>
+                <span className="text-sm font-medium">Autonomous Agent Executing</span>
               </div>
             </div>
           </div>

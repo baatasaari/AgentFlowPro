@@ -30,13 +30,13 @@ const Platform = () => {
     },
     {
       icon: GitBranch,
-      title: "Visual Flow Designer",
-      description: "Drag-and-drop conversation builder with conditional logic",
+      title: "Autonomous Workflow Designer",
+      description: "AI agents that create and optimize their own multi-step workflows",
       details: [
-        "No-code flow creation",
-        "Conditional branching",
-        "Variable management",
-        "A/B testing support"
+        "Self-generating workflow logic",
+        "Dynamic path optimization",
+        "Autonomous error handling",
+        "Performance-based self-improvement"
       ]
     },
     {

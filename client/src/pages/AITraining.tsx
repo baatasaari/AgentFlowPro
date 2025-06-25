@@ -8,27 +8,27 @@ const AITraining = () => {
   const trainingFeatures = [
     {
       icon: Brain,
-      title: "Custom Knowledge Base",
-      description: "Upload your company's knowledge and train AI agents with domain-specific expertise",
-      features: ["Document ingestion", "Semantic search", "Knowledge validation", "Version control"]
+      title: "Autonomous Reasoning Training",
+      description: "Train agents to independently analyze complex scenarios and make strategic decisions",
+      features: ["Multi-step reasoning", "Causal inference", "Strategic planning", "Decision trees"]
     },
     {
       icon: Target,
-      title: "Conversation Examples",
-      description: "Train with real conversation examples to ensure natural, brand-aligned responses",
-      features: ["Example conversations", "Response templates", "Tone adjustment", "Context learning"]
+      title: "Goal-Oriented Behavior",
+      description: "Program agents with specific objectives and train them to autonomously achieve goals",
+      features: ["Objective setting", "Path optimization", "Success metrics", "Adaptive strategies"]
     },
     {
       icon: Settings,
-      title: "Brand Voice Configuration",
-      description: "Configure personality, tone, and communication style to match your brand",
-      features: ["Personality traits", "Communication style", "Response patterns", "Brand guidelines"]
+      title: "Workflow Orchestration",
+      description: "Train agents to design, execute, and optimize complex multi-step workflows",
+      features: ["Task sequencing", "Resource allocation", "Error handling", "Process optimization"]
     },
     {
       icon: BarChart,
-      title: "Performance Analytics",
-      description: "Monitor training progress and optimize agent performance with detailed metrics",
-      features: ["Training metrics", "Response quality", "User satisfaction", "Improvement suggestions"]
+      title: "Autonomous Performance Optimization",
+      description: "Agents that continuously monitor and improve their own performance metrics",
+      features: ["Self-evaluation", "Strategy adaptation", "Performance benchmarking", "Continuous learning"]
     }
   ];
 

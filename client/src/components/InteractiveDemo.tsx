@@ -7,10 +7,10 @@ const InteractiveDemo = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl lg:text-4xl font-bold mb-4">
-            See AgentFlow in Action
+            Watch Autonomous Agents in Action
           </h2>
           <p className="text-xl text-blue-100 max-w-3xl mx-auto">
-            Experience how our AI agents handle real customer conversations across different scenarios and platforms.
+            Experience how our agentic AI independently analyzes situations, makes strategic decisions, and executes complex workflows across platforms.
           </p>
         </div>
 
@@ -21,8 +21,8 @@ const InteractiveDemo = () => {
                 <ShoppingCart className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-semibold">E-Commerce Support</h3>
-                <p className="text-blue-100">Product recommendations & order assistance</p>
+                <h3 className="text-xl font-semibold">Autonomous Sales Agent</h3>
+                <p className="text-blue-100">Independently qualifies leads, negotiates pricing, and closes deals</p>
               </div>
             </div>
             <Button className="bg-white text-primary px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors duration-200">

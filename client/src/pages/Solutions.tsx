@@ -80,11 +80,11 @@ const Solutions = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h1 className="text-4xl lg:text-6xl font-bold text-text-primary mb-6">
-                Industry-Specific Solutions
+                Industry-Specific Agentic Solutions
               </h1>
               <p className="text-xl text-text-muted max-w-4xl mx-auto mb-8">
-                Tailored AI agent solutions designed for your industry's unique challenges and requirements. 
-                From healthcare to e-commerce, we have proven solutions that drive results.
+                Autonomous AI agents designed for your industry's complex workflows and decision-making requirements. 
+                From autonomous healthcare diagnostics to intelligent e-commerce operations, our agents deliver strategic results.
               </p>
               <Button className="btn-primary">
                 Explore Solutions
@@ -98,10 +98,10 @@ const Solutions = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">
-                Proven Solutions Across Industries
+                Autonomous Agents Transforming Industries
               </h2>
               <p className="text-xl text-text-muted max-w-3xl mx-auto">
-                Each solution is built with industry-specific knowledge and compliance requirements
+                Each agentic solution operates independently with industry-specific reasoning and autonomous compliance management
               </p>
             </div>
 
