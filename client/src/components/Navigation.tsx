@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Bot, Menu, X, ChevronDown } from "lucide-react";
+import { Bot, Menu, X, ChevronDown, LayoutDashboard } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [location] = useLocation();
+  const { isAuthenticated, user } = useAuth();
 
   const navItems = [
     { 
@@ -130,12 +132,23 @@ const Navigation = () => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" className="text-text-muted hover:text-primary">
-              Sign In
-            </Button>
-            <Button className="btn-primary">
-              Start Free Trial
-            </Button>
+            {isAuthenticated ? (
+              <Link href="/dashboard">
+                <Button className="btn-primary flex items-center gap-2">
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" className="text-text-muted hover:text-primary">Sign In</Button>
+                </Link>
+                <Link href="/signup">
+                  <Button className="btn-primary">Start Free Trial</Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -189,12 +202,20 @@ const Navigation = () => {
               ))}
               <div className="pt-4 pb-3 border-t border-gray-200">
                 <div className="space-y-2">
-                  <Button variant="ghost" className="w-full justify-start">
-                    Sign In
-                  </Button>
-                  <Button className="w-full btn-primary">
-                    Start Free Trial
-                  </Button>
+                  {isAuthenticated ? (
+                    <Link href="/dashboard" onClick={() => setIsOpen(false)}>
+                      <Button className="w-full btn-primary">Dashboard</Button>
+                    </Link>
+                  ) : (
+                    <>
+                      <Link href="/login" onClick={() => setIsOpen(false)}>
+                        <Button variant="ghost" className="w-full justify-start">Sign In</Button>
+                      </Link>
+                      <Link href="/signup" onClick={() => setIsOpen(false)}>
+                        <Button className="w-full btn-primary">Start Free Trial</Button>
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

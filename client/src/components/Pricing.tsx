@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Shield, Lock, Headphones } from "lucide-react";
 import { PRICING_PLANS } from "@/lib/constants";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 interface PricingProps {
   showMonthlyDefault?: boolean;
@@ -11,11 +12,15 @@ interface PricingProps {
 
 const Pricing = ({ showMonthlyDefault = true, onConversion }: PricingProps) => {
   const [isMonthly, setIsMonthly] = useState(showMonthlyDefault);
+  const [, navigate] = useLocation();
 
-  const handlePlanSelect = (planName: string) => {
+  const handlePlanSelect = (plan: { name: string; price: number | null }) => {
     onConversion?.();
-    // Track specific plan selection
-    console.log(`Plan selected: ${planName}, Billing: ${isMonthly ? 'Monthly' : 'Annual'}`);
+    if (plan.price === null) {
+      navigate('/contact');
+    } else {
+      navigate('/signup');
+    }
   };
   return (
     <section className="py-20 bg-secondary">
@@ -95,8 +100,9 @@ const Pricing = ({ showMonthlyDefault = true, onConversion }: PricingProps) => {
                     </li>
                   ))}
                 </ul>
-                <Button 
+                <Button
                   className={`w-full ${plan.popular ? 'btn-primary' : 'bg-gray-100 hover:bg-gray-200 text-text-primary'}`}
+                  onClick={() => handlePlanSelect(plan)}
                 >
                   {plan.cta}
                 </Button>
