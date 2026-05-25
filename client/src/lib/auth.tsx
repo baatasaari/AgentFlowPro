@@ -7,6 +7,7 @@ interface AuthUser {
   role: string;
   firstName: string | null;
   lastName: string | null;
+  avatarUrl: string | null;
 }
 
 interface AuthOrg {
@@ -15,6 +16,12 @@ interface AuthOrg {
   slug: string;
   plan: string;
   trialEndsAt: string | null;
+  subscriptionStatus: string | null;
+  isSuspended: boolean | null;
+  stripeSubscriptionId: string | null;
+  maxAgents: number;
+  maxMonthlyMessages: number;
+  messagesThisPeriod: number;
 }
 
 interface AuthState {

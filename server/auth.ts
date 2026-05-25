@@ -1,12 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { db } from "./db";
-import { users, organizations } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { storage } from "./storage";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-jwt-secret-change-in-production";
-const JWT_EXPIRES_IN = "7d";
+const JWT_EXPIRES_IN = "30d";
 
 export interface AuthUser {
   id: number;
@@ -42,7 +40,6 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
     res.status(401).json({ error: "Authentication required" });
     return;
   }
-
   const token = authHeader.slice(7);
   try {
     const payload = jwt.verify(token, JWT_SECRET) as AuthUser;
@@ -53,54 +50,79 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   }
 }
 
-export function requireRole(...roles: string[]) {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      res.status(401).json({ error: "Authentication required" });
-      return;
+export function requireSuperAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+  if (!req.user) { res.status(401).json({ error: "Authentication required" }); return; }
+  if (req.user.role !== "super_admin") { res.status(403).json({ error: "Super admin access required" }); return; }
+  next();
+}
+
+export async function findOrCreateGoogleUser(profile: {
+  googleId: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  avatarUrl?: string;
+}): Promise<{ token: string; isNew: boolean }> {
+  // Try to find by Google ID first, then by email
+  let user = await storage.getUserByGoogleId(profile.googleId);
+
+  if (!user) {
+    user = await storage.getUserByEmail(profile.email);
+    if (user) {
+      // Link Google ID to existing account
+      user = await storage.updateUser(user.id, { googleId: profile.googleId, emailVerified: true });
     }
-    if (!roles.includes(req.user.role)) {
-      res.status(403).json({ error: "Insufficient permissions" });
-      return;
-    }
-    next();
-  };
+  }
+
+  let isNew = false;
+  if (!user) {
+    isNew = true;
+    const username = profile.email.split("@")[0].replace(/[^a-z0-9]/gi, "").toLowerCase() + "_" + Date.now().toString().slice(-4);
+    const slug = username + "_org";
+
+    const org = await storage.createOrganization({ name: `${profile.firstName || username}'s Organization`, slug });
+
+    user = await storage.createUser({
+      email: profile.email,
+      username,
+      googleId: profile.googleId,
+      firstName: profile.firstName || null,
+      lastName: profile.lastName || null,
+      avatarUrl: profile.avatarUrl || null,
+      role: "owner",
+      organizationId: org.id,
+      emailVerified: true,
+      isActive: true,
+    });
+  }
+
+  await storage.updateUserLastLogin(user.id);
+
+  const token = generateToken({
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    role: user.role,
+    organizationId: user.organizationId,
+  });
+
+  return { token, isNew };
 }
 
 export async function registerUser(email: string, username: string, password: string, firstName?: string, lastName?: string, orgName?: string) {
-  const existingUser = await db.select().from(users).where(eq(users.email, email));
-  if (existingUser.length > 0) {
-    throw new Error("Email already registered");
-  }
-
-  const existingUsername = await db.select().from(users).where(eq(users.username, username));
-  if (existingUsername.length > 0) {
-    throw new Error("Username already taken");
-  }
+  const existing = await storage.getUserByEmail(email);
+  if (existing) throw new Error("Email already registered");
 
   const hashedPassword = await hashPassword(password);
+  const orgSlug = `${username.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${Date.now().toString().slice(-5)}`;
+  const org = await storage.createOrganization({ name: orgName || `${username}'s Organization`, slug: orgSlug });
 
-  // Create organization for the user
-  const orgSlug = (orgName || username).toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-");
-  const uniqueSlug = `${orgSlug}-${Date.now()}`;
+  const user = await storage.createUser({
+    email, username, password: hashedPassword,
+    firstName: firstName || null, lastName: lastName || null,
+    role: "owner", organizationId: org.id, emailVerified: true, isActive: true,
+  });
 
-  const [org] = await db.insert(organizations).values({
-    name: orgName || `${username}'s Organization`,
-    slug: uniqueSlug,
-    plan: "free",
-    trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14-day trial
-  }).returning();
-
-  const [user] = await db.insert(users).values({
-    email,
-    username,
-    password: hashedPassword,
-    firstName: firstName || null,
-    lastName: lastName || null,
-    role: "owner",
-    organizationId: org.id,
-    emailVerified: true, // Skip email verification in dev
-  }).returning();
-
-  return { user, org };
+  const token = generateToken({ id: user.id, email: user.email, username: user.username, role: user.role, organizationId: user.organizationId });
+  return { user, org, token };
 }

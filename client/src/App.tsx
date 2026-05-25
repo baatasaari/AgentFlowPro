@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+
+// Pages
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Platform from "@/pages/Platform";
@@ -25,8 +27,10 @@ import Contact from "@/pages/Contact";
 import Register from "@/pages/Register";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
+import AdminPanel from "@/pages/AdminPanel";
+import AuthCallback from "@/pages/AuthCallback";
 
-// Platform-specific integration pages
+// Integration pages
 import WhatsAppIntegration from "@/pages/integrations/WhatsAppIntegration";
 import InstagramIntegration from "@/pages/integrations/InstagramIntegration";
 import FacebookIntegration from "@/pages/integrations/FacebookIntegration";
@@ -34,20 +38,23 @@ import TelegramIntegration from "@/pages/integrations/TelegramIntegration";
 import DiscordIntegration from "@/pages/integrations/DiscordIntegration";
 import LinkedInIntegration from "@/pages/integrations/LinkedInIntegration";
 import CustomIntegration from "@/pages/integrations/CustomIntegration";
-import ABTestDashboard from "@/components/ABTestDashboard";
 
-function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { isAuthenticated, isLoading } = useAuth();
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
-  if (!isAuthenticated) return <Redirect to="/login" />;
-  return <Component />;
+function Loading() {
+  return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 }
 
-function GuestRoute({ component: Component }: { component: React.ComponentType }) {
+function ProtectedRoute({ component: C }: { component: React.ComponentType }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return <Loading />;
+  if (!isAuthenticated) return <Redirect to="/login" />;
+  return <C />;
+}
+
+function GuestRoute({ component: C }: { component: React.ComponentType }) {
   const { isAuthenticated, isLoading } = useAuth();
   if (isLoading) return null;
   if (isAuthenticated) return <Redirect to="/dashboard" />;
-  return <Component />;
+  return <C />;
 }
 
 function Router() {
@@ -56,56 +63,47 @@ function Router() {
       <Route path="/" component={Home} />
 
       {/* Auth */}
-      <Route path="/signup" component={() => <GuestRoute component={Register} />} />
+      <Route path="/signup"   component={() => <GuestRoute component={Register} />} />
       <Route path="/register" component={() => <GuestRoute component={Register} />} />
-      <Route path="/login" component={() => <GuestRoute component={Login} />} />
+      <Route path="/login"    component={() => <GuestRoute component={Login} />} />
+      <Route path="/auth/callback" component={AuthCallback} />
 
-      {/* Protected app */}
-      <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
+      {/* Protected */}
+      <Route path="/dashboard"      component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path="/dashboard/:rest*" component={() => <ProtectedRoute component={Dashboard} />} />
+      <Route path="/admin"          component={() => <ProtectedRoute component={AdminPanel} />} />
+      <Route path="/admin/:rest*"   component={() => <ProtectedRoute component={AdminPanel} />} />
 
-      {/* Platform Pages */}
-      <Route path="/platform" component={Platform} />
-      <Route path="/features" component={FeaturesPage} />
+      {/* Marketing */}
+      <Route path="/platform"   component={Platform} />
+      <Route path="/features"   component={FeaturesPage} />
       <Route path="/integrations" component={IntegrationsPage} />
       <Route path="/ai-training" component={AITraining} />
       <Route path="/flow-designer" component={FlowDesigner} />
-      <Route path="/analytics" component={Analytics} />
+      <Route path="/analytics"  component={Analytics} />
 
-      {/* Platform-Specific Integration Pages */}
-      <Route path="/integrations/whatsapp" component={WhatsAppIntegration} />
+      <Route path="/integrations/whatsapp"  component={WhatsAppIntegration} />
       <Route path="/integrations/instagram" component={InstagramIntegration} />
-      <Route path="/integrations/facebook" component={FacebookIntegration} />
-      <Route path="/integrations/telegram" component={TelegramIntegration} />
-      <Route path="/integrations/discord" component={DiscordIntegration} />
-      <Route path="/integrations/linkedin" component={LinkedInIntegration} />
-      <Route path="/integrations/custom" component={CustomIntegration} />
+      <Route path="/integrations/facebook"  component={FacebookIntegration} />
+      <Route path="/integrations/telegram"  component={TelegramIntegration} />
+      <Route path="/integrations/discord"   component={DiscordIntegration} />
+      <Route path="/integrations/linkedin"  component={LinkedInIntegration} />
+      <Route path="/integrations/custom"    component={CustomIntegration} />
 
-      {/* Solutions Pages */}
-      <Route path="/solutions" component={Solutions} />
+      <Route path="/solutions"          component={Solutions} />
       <Route path="/solutions/:industry" component={Solutions} />
-
-      {/* Pricing */}
-      <Route path="/pricing" component={PricingPage} />
-
-      {/* Resources Pages */}
-      <Route path="/resources" component={ResourcesPage} />
-      <Route path="/docs" component={Documentation} />
-      <Route path="/api" component={Documentation} />
-      <Route path="/case-studies" component={CaseStudies} />
-      <Route path="/blog" component={Blog} />
-      <Route path="/community" component={ResourcesPage} />
-
-      {/* Company Pages */}
-      <Route path="/company" component={About} />
-      <Route path="/about" component={About} />
-      <Route path="/careers" component={About} />
-      <Route path="/partners" component={About} />
-      <Route path="/security" component={Security} />
-      <Route path="/contact" component={Contact} />
-
-      {/* Admin */}
-      <Route path="/admin/ab-testing" component={ABTestDashboard} />
+      <Route path="/pricing"            component={PricingPage} />
+      <Route path="/resources"          component={ResourcesPage} />
+      <Route path="/docs"               component={Documentation} />
+      <Route path="/case-studies"       component={CaseStudies} />
+      <Route path="/blog"               component={Blog} />
+      <Route path="/community"          component={ResourcesPage} />
+      <Route path="/company"            component={About} />
+      <Route path="/about"              component={About} />
+      <Route path="/careers"            component={About} />
+      <Route path="/partners"           component={About} />
+      <Route path="/security"           component={Security} />
+      <Route path="/contact"            component={Contact} />
 
       <Route component={NotFound} />
     </Switch>

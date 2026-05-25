@@ -1,134 +1,164 @@
 import {
   users, leads, newsletterSubscribers, contactSubmissions,
-  agents, apiKeys, agentConversations, auditLogs, organizations,
+  agents, apiKeys, widgetConversations, auditLogs, organizations,
+  PLANS,
   type User, type InsertUser, type Lead, type InsertLead,
   type NewsletterSubscriber, type InsertNewsletterSubscriber,
   type ContactSubmission, type InsertContactSubmission,
   type Agent, type InsertAgent, type ApiKey,
-  type Organization, type AuditLog,
+  type Organization, type AuditLog, type WidgetConversation,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, lt } from "drizzle-orm";
 import { randomBytes, createHash } from "crypto";
 import { v4 as uuidv4 } from "uuid";
 
-export interface IStorage {
-  // Users
-  getUser(id: number): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  updateUserLastLogin(id: number): Promise<void>;
-
-  // Organizations
-  getOrganization(id: number): Promise<Organization | undefined>;
-  getOrganizationBySlug(slug: string): Promise<Organization | undefined>;
-
-  // Agents
-  getAgents(organizationId: number): Promise<Agent[]>;
-  getAgent(id: number, organizationId: number): Promise<Agent | undefined>;
-  createAgent(agent: InsertAgent): Promise<Agent>;
-  updateAgent(id: number, organizationId: number, data: Partial<Agent>): Promise<Agent | undefined>;
-  deleteAgent(id: number, organizationId: number): Promise<boolean>;
-
-  // API Keys
-  getApiKeys(organizationId: number): Promise<Omit<ApiKey, "keyHash">[]>;
-  createApiKey(organizationId: number, createdById: number, name: string, expiresAt?: Date): Promise<{ apiKey: ApiKey; rawKey: string }>;
-  revokeApiKey(id: number, organizationId: number): Promise<boolean>;
-  validateApiKey(rawKey: string): Promise<ApiKey | undefined>;
-
-  // Dashboard stats
-  getDashboardStats(organizationId: number): Promise<{
-    totalAgents: number;
-    activeAgents: number;
-    totalConversations: number;
-    openConversations: number;
-    totalMessages: number;
-    successRate: number;
-    conversationsLast7Days: { date: string; count: number }[];
-  }>;
-
-  // Audit log
-  createAuditLog(entry: Omit<AuditLog, "id" | "createdAt">): Promise<void>;
-
-  // Marketing
-  createLead(lead: InsertLead): Promise<Lead>;
-  createNewsletterSubscriber(subscriber: InsertNewsletterSubscriber): Promise<NewsletterSubscriber>;
-  createContactSubmission(submission: InsertContactSubmission): Promise<ContactSubmission>;
-  getLeads(): Promise<Lead[]>;
-  getContactSubmissions(): Promise<ContactSubmission[]>;
-}
-
-export class DatabaseStorage implements IStorage {
+export class DatabaseStorage {
+  // ─── Users ──────────────────────────────────────────────────────────────────
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    const [u] = await db.select().from(users).where(eq(users.id, id));
+    return u;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
+    const [u] = await db.select().from(users).where(eq(users.email, email));
+    return u;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    const [u] = await db.select().from(users).where(eq(users.googleId, googleId));
+    return u;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
+  async createUser(data: Partial<User> & { email: string; username: string }): Promise<User> {
+    const [u] = await db.insert(users).values(data as any).returning();
+    return u;
+  }
+
+  async updateUser(id: number, data: Partial<User>): Promise<User> {
+    const [u] = await db.update(users).set({ ...data, updatedAt: new Date() }).where(eq(users.id, id)).returning();
+    return u;
   }
 
   async updateUserLastLogin(id: number): Promise<void> {
     await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, id));
   }
 
+  // ─── Organizations ──────────────────────────────────────────────────────────
   async getOrganization(id: number): Promise<Organization | undefined> {
     const [org] = await db.select().from(organizations).where(eq(organizations.id, id));
     return org;
   }
 
-  async getOrganizationBySlug(slug: string): Promise<Organization | undefined> {
-    const [org] = await db.select().from(organizations).where(eq(organizations.slug, slug));
+  async getAllOrganizations(): Promise<Organization[]> {
+    return db.select().from(organizations).orderBy(desc(organizations.createdAt));
+  }
+
+  async createOrganization(data: Partial<Organization> & { name: string; slug: string }): Promise<Organization> {
+    const plan = (data.plan || "free") as keyof typeof PLANS;
+    const limits = PLANS[plan];
+    const [org] = await db.insert(organizations).values({
+      ...data,
+      maxAgents: limits.maxAgents,
+      maxMonthlyMessages: limits.maxMonthlyMessages,
+      trialEndsAt: new Date(Date.now() + 14 * 86400000),
+      periodResetAt: new Date(Date.now() + 30 * 86400000),
+    } as any).returning();
     return org;
   }
 
+  async updateOrganization(id: number, data: Partial<Organization>): Promise<Organization> {
+    const [org] = await db.update(organizations).set({ ...data, updatedAt: new Date() }).where(eq(organizations.id, id)).returning();
+    return org;
+  }
+
+  async incrementMessageCount(organizationId: number): Promise<{ allowed: boolean }> {
+    const [org] = await db.select().from(organizations).where(eq(organizations.id, organizationId));
+    if (!org) return { allowed: false };
+    if (org.isSuspended) return { allowed: false };
+    if (org.messagesThisPeriod >= org.maxMonthlyMessages) return { allowed: false };
+    await db.update(organizations)
+      .set({ messagesThisPeriod: sql`${organizations.messagesThisPeriod} + 1` })
+      .where(eq(organizations.id, organizationId));
+    return { allowed: true };
+  }
+
+  async upgradePlan(organizationId: number, plan: keyof typeof PLANS): Promise<Organization> {
+    const limits = PLANS[plan];
+    return this.updateOrganization(organizationId, {
+      plan,
+      maxAgents: limits.maxAgents,
+      maxMonthlyMessages: limits.maxMonthlyMessages,
+    });
+  }
+
+  // ─── Agents ─────────────────────────────────────────────────────────────────
   async getAgents(organizationId: number): Promise<Agent[]> {
     return db.select().from(agents).where(eq(agents.organizationId, organizationId)).orderBy(desc(agents.createdAt));
   }
 
-  async getAgent(id: number, organizationId: number): Promise<Agent | undefined> {
-    const [agent] = await db.select().from(agents).where(
-      and(eq(agents.id, id), eq(agents.organizationId, organizationId))
-    );
-    return agent;
+  async getAgentById(id: number): Promise<Agent | undefined> {
+    const [a] = await db.select().from(agents).where(eq(agents.id, id));
+    return a;
   }
 
-  async createAgent(agent: InsertAgent): Promise<Agent> {
-    const [newAgent] = await db.insert(agents).values(agent as any).returning();
-    return newAgent;
+  async getAgentByWidgetToken(token: string): Promise<Agent | undefined> {
+    const [a] = await db.select().from(agents).where(eq(agents.widgetToken, token));
+    return a;
+  }
+
+  async getAgent(id: number, organizationId: number): Promise<Agent | undefined> {
+    const [a] = await db.select().from(agents).where(and(eq(agents.id, id), eq(agents.organizationId, organizationId)));
+    return a;
+  }
+
+  async createAgent(data: Partial<Agent> & { organizationId: number; createdById: number; name: string }): Promise<Agent> {
+    const [a] = await db.insert(agents).values(data as any).returning();
+    return a;
   }
 
   async updateAgent(id: number, organizationId: number, data: Partial<Agent>): Promise<Agent | undefined> {
-    const [updated] = await db.update(agents)
+    const [a] = await db.update(agents)
       .set({ ...data, updatedAt: new Date() })
       .where(and(eq(agents.id, id), eq(agents.organizationId, organizationId)))
       .returning();
-    return updated;
+    return a;
   }
 
   async deleteAgent(id: number, organizationId: number): Promise<boolean> {
-    const result = await db.delete(agents).where(
-      and(eq(agents.id, id), eq(agents.organizationId, organizationId))
-    );
-    return (result.rowCount ?? 0) > 0;
+    const r = await db.delete(agents).where(and(eq(agents.id, id), eq(agents.organizationId, organizationId)));
+    return (r.rowCount ?? 0) > 0;
   }
 
+  async incrementAgentStats(agentId: number): Promise<void> {
+    await db.update(agents).set({
+      totalMessages: sql`${agents.totalMessages} + 1`,
+    }).where(eq(agents.id, agentId));
+  }
+
+  // ─── Widget Conversations ────────────────────────────────────────────────────
+  async getOrCreateConversation(agentId: number, organizationId: number, sessionId: string): Promise<WidgetConversation> {
+    const [existing] = await db.select().from(widgetConversations)
+      .where(and(eq(widgetConversations.agentId, agentId), eq(widgetConversations.sessionId, sessionId)));
+    if (existing) return existing;
+    const [conv] = await db.insert(widgetConversations).values({ agentId, organizationId, sessionId, messages: [] }).returning();
+    return conv;
+  }
+
+  async appendMessage(sessionId: number, role: "user" | "assistant", content: string): Promise<void> {
+    await db.update(widgetConversations)
+      .set({
+        messages: sql`${widgetConversations.messages} || ${JSON.stringify([{ role, content, ts: Date.now() }])}::jsonb`,
+        lastMessageAt: new Date(),
+      })
+      .where(eq(widgetConversations.id, sessionId));
+  }
+
+  // ─── API Keys ────────────────────────────────────────────────────────────────
   async getApiKeys(organizationId: number): Promise<Omit<ApiKey, "keyHash">[]> {
-    const keys = await db.select().from(apiKeys).where(
-      and(eq(apiKeys.organizationId, organizationId), eq(apiKeys.isActive, true))
-    ).orderBy(desc(apiKeys.createdAt));
+    const keys = await db.select().from(apiKeys)
+      .where(and(eq(apiKeys.organizationId, organizationId), eq(apiKeys.isActive, true)))
+      .orderBy(desc(apiKeys.createdAt));
     return keys.map(({ keyHash: _kh, ...rest }) => rest);
   }
 
@@ -136,95 +166,91 @@ export class DatabaseStorage implements IStorage {
     const rawKey = `afp_${randomBytes(32).toString("hex")}`;
     const keyHash = createHash("sha256").update(rawKey).digest("hex");
     const keyPrefix = rawKey.slice(0, 12);
-
     const [apiKey] = await db.insert(apiKeys).values({
-      keyId: uuidv4(),
-      name,
-      keyHash,
-      keyPrefix,
-      organizationId,
-      createdById,
-      expiresAt: expiresAt || null,
-      isActive: true,
+      keyId: uuidv4(), name, keyHash, keyPrefix, organizationId, createdById,
+      expiresAt: expiresAt || null, isActive: true,
     }).returning();
-
     return { apiKey, rawKey };
   }
 
   async revokeApiKey(id: number, organizationId: number): Promise<boolean> {
-    const result = await db.update(apiKeys)
-      .set({ isActive: false })
+    const r = await db.update(apiKeys).set({ isActive: false })
       .where(and(eq(apiKeys.id, id), eq(apiKeys.organizationId, organizationId)));
-    return (result.rowCount ?? 0) > 0;
+    return (r.rowCount ?? 0) > 0;
   }
 
-  async validateApiKey(rawKey: string): Promise<ApiKey | undefined> {
-    const keyHash = createHash("sha256").update(rawKey).digest("hex");
-    const [key] = await db.select().from(apiKeys).where(
-      and(eq(apiKeys.keyHash, keyHash), eq(apiKeys.isActive, true))
-    );
-    if (key) {
-      await db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, key.id));
-    }
-    return key;
-  }
-
+  // ─── Dashboard stats ─────────────────────────────────────────────────────────
   async getDashboardStats(organizationId: number) {
-    const [agentRows, conversationRows] = await Promise.all([
+    const [agentRows, org] = await Promise.all([
       db.select().from(agents).where(eq(agents.organizationId, organizationId)),
-      db.select().from(agentConversations).where(eq(agentConversations.organizationId, organizationId)),
+      this.getOrganization(organizationId),
     ]);
-
     const totalAgents = agentRows.length;
     const activeAgents = agentRows.filter(a => a.status === "active").length;
-    const totalConversations = conversationRows.length;
-    const openConversations = conversationRows.filter(c => c.status === "open").length;
-    const totalMessages = agentRows.reduce((sum, a) => sum + (a.totalMessages || 0), 0);
-    const avgSuccessRate = agentRows.length > 0
-      ? Math.round(agentRows.reduce((sum, a) => sum + (a.successRate || 100), 0) / agentRows.length)
-      : 100;
-
-    // Last 7 days conversation counts
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const recent = conversationRows.filter(c => c.startedAt && c.startedAt > sevenDaysAgo);
-    const byDay: Record<string, number> = {};
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
-      byDay[d.toISOString().slice(0, 10)] = 0;
-    }
-    for (const conv of recent) {
-      const day = conv.startedAt!.toISOString().slice(0, 10);
-      if (day in byDay) byDay[day]++;
-    }
-
+    const totalMessages = agentRows.reduce((s, a) => s + (a.totalMessages || 0), 0);
     return {
       totalAgents,
       activeAgents,
-      totalConversations,
-      openConversations,
       totalMessages,
-      successRate: avgSuccessRate,
-      conversationsLast7Days: Object.entries(byDay).map(([date, count]) => ({ date, count })),
+      messagesThisPeriod: org?.messagesThisPeriod ?? 0,
+      maxMonthlyMessages: org?.maxMonthlyMessages ?? 100,
+      plan: org?.plan ?? "free",
+      usagePercent: org ? Math.round(((org.messagesThisPeriod || 0) / (org.maxMonthlyMessages || 100)) * 100) : 0,
     };
   }
 
+  // ─── Admin ──────────────────────────────────────────────────────────────────
+  async getAdminStats() {
+    const [allOrgs, allAgents] = await Promise.all([
+      db.select().from(organizations),
+      db.select().from(agents),
+    ]);
+    return {
+      totalOrganizations: allOrgs.length,
+      activeOrganizations: allOrgs.filter(o => !o.isSuspended).length,
+      totalAgents: allAgents.length,
+      activeAgents: allAgents.filter(a => a.status === "active").length,
+      planBreakdown: {
+        free: allOrgs.filter(o => o.plan === "free").length,
+        starter: allOrgs.filter(o => o.plan === "starter").length,
+        professional: allOrgs.filter(o => o.plan === "professional").length,
+        enterprise: allOrgs.filter(o => o.plan === "enterprise").length,
+      },
+      totalMessages: allOrgs.reduce((s, o) => s + (o.messagesThisPeriod || 0), 0),
+    };
+  }
+
+  async getAllOrgsWithUsers() {
+    const orgs = await db.select().from(organizations).orderBy(desc(organizations.createdAt));
+    const result = await Promise.all(orgs.map(async (org) => {
+      const orgUsers = await db.select({
+        id: users.id, email: users.email, firstName: users.firstName, lastName: users.lastName, role: users.role, createdAt: users.createdAt,
+      }).from(users).where(eq(users.organizationId, org.id));
+      const agentCount = await db.select({ count: sql<number>`count(*)` }).from(agents).where(eq(agents.organizationId, org.id));
+      return { ...org, users: orgUsers, agentCount: Number(agentCount[0]?.count || 0) };
+    }));
+    return result;
+  }
+
+  // ─── Audit log ───────────────────────────────────────────────────────────────
   async createAuditLog(entry: Omit<AuditLog, "id" | "createdAt">): Promise<void> {
     await db.insert(auditLogs).values(entry);
   }
 
-  async createLead(insertLead: InsertLead): Promise<Lead> {
-    const [lead] = await db.insert(leads).values(insertLead).returning();
-    return lead;
+  // ─── Marketing ───────────────────────────────────────────────────────────────
+  async createLead(data: InsertLead): Promise<Lead> {
+    const [l] = await db.insert(leads).values(data).returning();
+    return l;
   }
 
-  async createNewsletterSubscriber(insertSubscriber: InsertNewsletterSubscriber): Promise<NewsletterSubscriber> {
-    const [subscriber] = await db.insert(newsletterSubscribers).values(insertSubscriber).returning();
-    return subscriber;
+  async createNewsletterSubscriber(data: InsertNewsletterSubscriber): Promise<NewsletterSubscriber> {
+    const [s] = await db.insert(newsletterSubscribers).values(data).returning();
+    return s;
   }
 
-  async createContactSubmission(insertSubmission: InsertContactSubmission): Promise<ContactSubmission> {
-    const [submission] = await db.insert(contactSubmissions).values(insertSubmission).returning();
-    return submission;
+  async createContactSubmission(data: InsertContactSubmission): Promise<ContactSubmission> {
+    const [c] = await db.insert(contactSubmissions).values(data).returning();
+    return c;
   }
 
   async getLeads(): Promise<Lead[]> {
