@@ -436,6 +436,142 @@ export const insertLeadSchema = createInsertSchema(leads).omit({ id: true, creat
 export const insertNewsletterSubscriberSchema = createInsertSchema(newsletterSubscribers).omit({ id: true, createdAt: true, subscribed: true });
 export const insertContactSubmissionSchema = createInsertSchema(contactSubmissions).omit({ id: true, createdAt: true, status: true });
 
+// ─── Connectors (plugin integrations) ────────────────────────────────────────
+export const connectorTypeEnum = pgEnum("connector_type", [
+  "website_scraper", "google_calendar", "outlook_caldav",
+  "whatsapp_business", "sms_msg91",
+  "razorpay", "upi",
+  "zoho_crm",
+]);
+
+export const connectorStatusEnum = pgEnum("connector_status", [
+  "pending", "active", "error", "disconnected",
+]);
+
+export const connectors = pgTable("connectors", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
+  type: connectorTypeEnum("type").notNull(),
+  name: text("name").notNull(),
+  status: connectorStatusEnum("status").default("pending").notNull(),
+  encryptedConfig: jsonb("encrypted_config").default({}),
+  publicConfig: jsonb("public_config").default({}),
+  lastTestedAt: timestamp("last_tested_at"),
+  lastSyncAt: timestamp("last_sync_at"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ─── Workflows ────────────────────────────────────────────────────────────────
+export const workflowStatusEnum = pgEnum("workflow_status", [
+  "active", "inactive", "draft",
+]);
+
+export const workflows = pgTable("workflows", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  status: workflowStatusEnum("status").default("draft").notNull(),
+  trigger: jsonb("trigger").notNull().default({}),
+  steps: jsonb("steps").notNull().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ─── Workflow Runs ────────────────────────────────────────────────────────────
+export const workflowRunStatusEnum = pgEnum("workflow_run_status", [
+  "pending", "running", "completed", "failed", "cancelled",
+]);
+
+export const workflowRuns = pgTable("workflow_runs", {
+  id: serial("id").primaryKey(),
+  workflowId: integer("workflow_id").references(() => workflows.id).notNull(),
+  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
+  status: workflowRunStatusEnum("status").default("pending").notNull(),
+  triggerPayload: jsonb("trigger_payload").default({}),
+  stepResults: jsonb("step_results").default([]),
+  errorMessage: text("error_message"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ─── Notification Logs ────────────────────────────────────────────────────────
+export const notificationChannelEnum = pgEnum("notification_channel", [
+  "email", "whatsapp", "sms",
+]);
+
+export const notificationLogs = pgTable("notification_logs", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
+  channel: notificationChannelEnum("channel").notNull(),
+  recipient: text("recipient").notNull(),
+  templateId: text("template_id"),
+  body: text("body"),
+  status: text("status").default("sent"),
+  externalId: text("external_id"),
+  workflowRunId: integer("workflow_run_id"),
+  appointmentId: integer("appointment_id"),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ─── India-specific additions to businessSettings ─────────────────────────────
+// These are added to the existing businessSettings table via a new migration
+export const indiaBusinessSettings = pgTable("india_business_settings", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").references(() => organizations.id).notNull().unique(),
+  state: text("state"),                               // Indian state code e.g. "MH"
+  pinCode: text("pin_code"),
+  gstin: text("gstin"),                               // 15-char GST number
+  primaryLanguage: text("primary_language").default("en"),
+  supportedLanguages: jsonb("supported_languages").default(["en"]),
+  upiId: text("upi_id"),
+  blockHolidayBookings: boolean("block_holiday_bookings").default(false),
+  festivalSurchargeEnabled: boolean("festival_surcharge_enabled").default(false),
+  festivalSurchargePercent: integer("festival_surcharge_percent").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ─── Zod schemas for new tables ───────────────────────────────────────────────
+export const insertConnectorSchema = z.object({
+  type: z.enum(["website_scraper", "google_calendar", "outlook_caldav", "whatsapp_business", "sms_msg91", "razorpay", "upi", "zoho_crm"]),
+  name: z.string().min(1).max(100),
+  config: z.record(z.unknown()),
+});
+
+export const insertWorkflowSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().optional(),
+  trigger: z.object({
+    type: z.string(),
+    conditions: z.array(z.any()).optional(),
+  }),
+  steps: z.array(z.object({
+    id: z.string(),
+    type: z.string(),
+    name: z.string(),
+    config: z.record(z.unknown()),
+    conditions: z.array(z.any()).optional(),
+    retryCount: z.number().optional(),
+  })),
+});
+
+export const indiaSettingsSchema = z.object({
+  state: z.string().optional(),
+  pinCode: z.string().regex(/^\d{6}$/).optional(),
+  gstin: z.string().optional(),
+  primaryLanguage: z.string().optional(),
+  supportedLanguages: z.array(z.string()).optional(),
+  upiId: z.string().optional(),
+  blockHolidayBookings: z.boolean().optional(),
+  festivalSurchargeEnabled: z.boolean().optional(),
+  festivalSurchargePercent: z.number().min(0).max(100).optional(),
+});
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 export type User = typeof users.$inferSelect;
 export type Organization = typeof organizations.$inferSelect;
@@ -452,6 +588,11 @@ export type AuditLog = typeof auditLogs.$inferSelect;
 export type Lead = typeof leads.$inferSelect;
 export type NewsletterSubscriber = typeof newsletterSubscribers.$inferSelect;
 export type ContactSubmission = typeof contactSubmissions.$inferSelect;
+export type Connector = typeof connectors.$inferSelect;
+export type Workflow = typeof workflows.$inferSelect;
+export type WorkflowRun = typeof workflowRuns.$inferSelect;
+export type NotificationLog = typeof notificationLogs.$inferSelect;
+export type IndiaBusinessSettings = typeof indiaBusinessSettings.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertAgent = z.infer<typeof insertAgentSchema>;

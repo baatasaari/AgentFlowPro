@@ -12,6 +12,12 @@ import { z } from "zod";
 import Anthropic from "@anthropic-ai/sdk";
 import Stripe from "stripe";
 import { sendAppointmentConfirmation, sendCancellationEmail } from "./email";
+import { listPlugins, getPlugin } from "./plugins/registry.js";
+import { scrapeWebsite } from "./plugins/website-scraper.js";
+import { validateGSTIN } from "./india/gst.js";
+import { validateIndianPhone, generateUpiLink } from "./india/phone.js";
+import { isIndianHoliday, getUpcomingHolidays } from "./india/holidays.js";
+import { dispatch, WORKFLOW_TEMPLATES } from "./workflows/engine.js";
 
 const WIDGET_BASE_URL = process.env.WIDGET_BASE_URL || "https://agentflowpro.com";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
@@ -660,6 +666,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/leads", async (req, res) => { try { res.json(await storage.createLead(insertLeadSchema.parse(req.body))); } catch { res.status(500).json({ error: "Failed" }); } });
   app.post("/api/newsletter", async (req, res) => { try { res.json(await storage.createNewsletterSubscriber(insertNewsletterSubscriberSchema.parse(req.body))); } catch { res.status(500).json({ error: "Failed" }); } });
   app.post("/api/contact", async (req, res) => { try { res.json(await storage.createContactSubmission(insertContactSubmissionSchema.parse(req.body))); } catch { res.status(500).json({ error: "Failed" }); } });
+
+  // ─── Plugin / Connector routes ─────────────────────────────────────────────
+
+  app.get("/api/plugins", requireAuth, (_req, res) => {
+    res.json(listPlugins().map(p => ({
+      id: p.id, name: p.name, description: p.description, icon: p.icon,
+      category: p.category, configFields: p.configFields, capabilities: p.capabilities,
+      docsUrl: p.docsUrl, popularIn: p.popularIn,
+    })));
+  });
+
+  app.get("/api/plugins/:id", requireAuth, (req, res) => {
+    const plugin = getPlugin(req.params.id);
+    if (!plugin) return res.status(404).json({ error: "Plugin not found" });
+    res.json(plugin);
+  });
+
+  app.post("/api/plugins/:id/test", requireAuth, async (req: AuthRequest, res) => {
+    const plugin = getPlugin(req.params.id);
+    if (!plugin) return res.status(404).json({ error: "Plugin not found" });
+    try {
+      const result = await plugin.testConnection(req.body);
+      res.json(result);
+    } catch (e: any) {
+      res.status(500).json({ success: false, message: e.message });
+    }
+  });
+
+  app.post("/api/scrape-preview", requireAuth, async (req: AuthRequest, res) => {
+    const { url, deepScrape } = req.body;
+    if (!url) return res.status(400).json({ error: "url is required" });
+    try {
+      const result = await scrapeWebsite(url, !!deepScrape);
+      res.json(result);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // ─── Workflow routes ────────────────────────────────────────────────────────
+
+  app.get("/api/workflow-templates", requireAuth, (_req, res) => {
+    res.json(WORKFLOW_TEMPLATES);
+  });
+
+  app.post("/api/workflows/dispatch", requireAuth, async (req: AuthRequest, res) => {
+    const { triggerType, payload } = req.body;
+    if (!triggerType) return res.status(400).json({ error: "triggerType is required" });
+    try {
+      await dispatch(triggerType, payload || {}, req.user!.organizationId!);
+      res.json({ queued: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // ─── India utilities ────────────────────────────────────────────────────────
+
+  app.post("/api/india/validate-gstin", requireAuth, (req, res) => {
+    const { gstin } = req.body;
+    if (!gstin) return res.status(400).json({ error: "gstin is required" });
+    res.json(validateGSTIN(gstin));
+  });
+
+  app.post("/api/india/validate-phone", requireAuth, (req, res) => {
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ error: "phone is required" });
+    res.json(validateIndianPhone(phone));
+  });
+
+  app.post("/api/india/upi-link", requireAuth, (req, res) => {
+    const { upiId, amount, note, merchantName } = req.body;
+    if (!upiId || !amount) return res.status(400).json({ error: "upiId and amount are required" });
+    try {
+      const link = generateUpiLink(upiId, amount, note || "", merchantName);
+      res.json({ link });
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  app.get("/api/india/holidays", requireAuth, (req, res) => {
+    const days = parseInt(req.query.days as string) || 30;
+    const stateCode = req.query.stateCode as string | undefined;
+    res.json(getUpcomingHolidays(days, stateCode));
+  });
+
+  app.post("/api/india/check-holiday", requireAuth, (req, res) => {
+    const { date, stateCode } = req.body;
+    if (!date) return res.status(400).json({ error: "date is required" });
+    res.json({ isHoliday: isIndianHoliday(date, stateCode) });
+  });
 
   return http;
 }
