@@ -346,7 +346,9 @@ export const insertAgentSchema = z.object({
   enableLeadCapture: z.boolean().optional(),
 });
 
-export const updateAgentSchema = insertAgentSchema.partial();
+export const updateAgentSchema = insertAgentSchema.partial().extend({
+  status: z.enum(["active", "inactive", "training", "error"]).optional(),
+});
 
 export const insertServiceSchema = z.object({
   name: z.string().min(1),

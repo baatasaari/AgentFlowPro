@@ -40,11 +40,12 @@ app.use(express.urlencoded({ extended: false }));
 
 // Serve widget.js with CORS (must be loadable from any domain)
 const publicDir = path.join(process.cwd(), "public");
-app.use("/widget.js", (_req, res, next) => {
+app.get("/widget.js", (_req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "public, max-age=300");
-  next();
-}, express.static(publicDir));
+  res.setHeader("Content-Type", "application/javascript");
+  res.sendFile(path.join(publicDir, "widget.js"));
+});
 
 // Chat API: allow cross-origin from any embedded site
 app.use("/api/chat", (req, res, next) => {
