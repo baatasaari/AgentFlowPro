@@ -1,0 +1,33 @@
+meta {
+  name: Scrape Website Preview
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/scrape-preview
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "url": "https://www.yourbusiness.com",
+    "deepScrape": false
+  }
+}
+
+docs {
+  Scrapes the given URL and returns extracted:
+  - businessName, description, phone, email, address
+  - services (with prices in INR)
+  - faqs
+  - businessHours
+  - socialLinks (facebook, instagram, whatsapp, etc.)
+
+  Set deepScrape: true to also scrape /about, /services, /contact sub-pages.
+}

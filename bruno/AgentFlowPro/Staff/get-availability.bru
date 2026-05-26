@@ -1,0 +1,15 @@
+meta {
+  name: Get Staff Availability
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/staff/{{staffId}}/availability
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

@@ -1,0 +1,31 @@
+meta {
+  name: Generate UPI Payment Link
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/india/upi-link
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "upiId": "clinic@paytm",
+    "amount": 500,
+    "note": "General Consultation - APPT-001",
+    "merchantName": "Dr Sharma Clinic"
+  }
+}
+
+docs {
+  Generates a UPI deep link for payment collection.
+  Returns: { link: "upi://pay?pa=clinic%40paytm&pn=Dr+Sharma+Clinic&am=500.00&cu=INR&tn=..." }
+
+  Works with PhonePe, GPay, Paytm, BHIM, and all UPI apps.
+}

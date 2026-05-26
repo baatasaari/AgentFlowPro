@@ -1,0 +1,25 @@
+meta {
+  name: Admin - Upgrade Org Plan
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/api/admin/organizations/1/plan
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "plan": "professional"
+  }
+}
+
+docs {
+  plan: "free" | "starter" | "professional" | "enterprise"
+}

@@ -1,0 +1,28 @@
+meta {
+  name: Validate Indian Phone
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/india/validate-phone
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "phone": "9876543210"
+  }
+}
+
+docs {
+  Validates and normalizes an Indian mobile number.
+  Returns: { valid, normalized: "+919876543210" }
+
+  Accepts: 9876543210, +919876543210, 09876543210, +91 98765 43210
+}

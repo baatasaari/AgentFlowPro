@@ -1,0 +1,21 @@
+meta {
+  name: Update Knowledge Entry
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/api/knowledge/{{knowledgeId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "answer": "We are open Monday to Saturday, 9 AM to 8 PM. Sunday by appointment only. Emergency services available 24/7 at +91 98765 43210."
+  }
+}

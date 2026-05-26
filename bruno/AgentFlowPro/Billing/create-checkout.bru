@@ -1,0 +1,27 @@
+meta {
+  name: Create Stripe Checkout
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/billing/create-checkout
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "plan": "starter"
+  }
+}
+
+docs {
+  plan: "starter" (₹3,499/mo) or "professional" (₹8,999/mo)
+  Returns: { url: "https://checkout.stripe.com/..." }
+  Requires STRIPE_SECRET_KEY to be configured.
+}

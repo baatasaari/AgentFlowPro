@@ -1,0 +1,15 @@
+meta {
+  name: Delete Service
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{baseUrl}}/api/services/{{serviceId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

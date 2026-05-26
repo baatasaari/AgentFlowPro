@@ -1,0 +1,20 @@
+meta {
+  name: Open Billing Portal
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/billing/portal
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Returns a Stripe Customer Portal URL for managing subscriptions.
+  Requires an existing Stripe customer (i.e. has already subscribed).
+}

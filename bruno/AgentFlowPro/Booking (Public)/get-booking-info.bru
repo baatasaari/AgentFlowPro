@@ -1,0 +1,16 @@
+meta {
+  name: Get Booking Info (Public)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/booking/info/{{widgetToken}}
+  body: none
+  auth: none
+}
+
+docs {
+  Returns services, staff, and business info for the booking widget.
+  No authentication required — uses the public widget token.
+}

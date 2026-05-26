@@ -1,0 +1,22 @@
+meta {
+  name: Get Available Slots (Public)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/booking/slots/{{widgetToken}}
+  body: none
+  auth: none
+}
+
+params:query {
+  date: 2026-06-02
+  serviceId: {{serviceId}}
+  staffId: {{staffId}}
+}
+
+docs {
+  Returns available time slots for a given date.
+  date format: YYYY-MM-DD
+}

@@ -1,0 +1,23 @@
+meta {
+  name: Test WhatsApp Connection
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/plugins/whatsapp_business/test
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "phoneNumberId": "YOUR_PHONE_NUMBER_ID",
+    "accessToken": "YOUR_META_ACCESS_TOKEN",
+    "businessAccountId": "YOUR_BUSINESS_ACCOUNT_ID"
+  }
+}

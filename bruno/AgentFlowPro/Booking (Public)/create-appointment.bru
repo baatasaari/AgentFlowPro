@@ -1,0 +1,31 @@
+meta {
+  name: Create Appointment (Public)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/booking/create/{{widgetToken}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "customerName": "Amit Kumar",
+    "customerEmail": "amit.kumar@example.com",
+    "customerPhone": "+91 98765 11111",
+    "serviceId": 1,
+    "staffId": 1,
+    "startsAt": "2026-06-02T10:00:00.000Z",
+    "timezone": "Asia/Kolkata",
+    "customerNotes": "First visit, general check-up",
+    "source": "widget"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("appointmentId", res.body.appointmentId);
+  }
+}

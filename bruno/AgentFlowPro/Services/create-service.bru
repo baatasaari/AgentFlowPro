@@ -1,0 +1,32 @@
+meta {
+  name: Create Service
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/services
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "General Consultation",
+    "description": "Comprehensive health check-up and diagnosis by our expert doctors",
+    "price": "500",
+    "currency": "INR",
+    "durationMinutes": 30,
+    "isActive": true
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("serviceId", res.body.id);
+  }
+}

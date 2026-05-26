@@ -1,0 +1,31 @@
+meta {
+  name: Validate GSTIN
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/india/validate-gstin
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "gstin": "27AAPFU0939F1ZV"
+  }
+}
+
+docs {
+  Validates an Indian GST Identification Number.
+  Returns: { valid, details: { stateCode, stateName, pan, entityNumber } }
+
+  Test GSTINs:
+  - 27AAPFU0939F1ZV  → Maharashtra (valid)
+  - 29AABCT1332L1ZA  → Karnataka (valid)
+  - 27AAPFU0939F1ZX  → invalid checksum
+}

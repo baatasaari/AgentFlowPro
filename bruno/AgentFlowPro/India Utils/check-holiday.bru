@@ -1,0 +1,28 @@
+meta {
+  name: Check if Date is Holiday
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/india/check-holiday
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "date": "2026-08-15",
+    "stateCode": "MH"
+  }
+}
+
+docs {
+  Returns { isHoliday: true/false }.
+  2026-08-15 = Independence Day (national holiday).
+  Use this to block bookings on public holidays.
+}

@@ -1,0 +1,16 @@
+meta {
+  name: Get Chat Config (Public)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/chat/config/{{widgetToken}}
+  body: none
+  auth: none
+}
+
+docs {
+  Returns widget style, greeting message, and feature flags.
+  Used by the embedded widget on load.
+}

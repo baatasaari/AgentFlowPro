@@ -1,0 +1,31 @@
+meta {
+  name: Create API Key
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/keys
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "WhatsApp Integration Key"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("keyId", res.body.id);
+  }
+}
+
+docs {
+  The rawKey is only returned once at creation — save it immediately.
+}

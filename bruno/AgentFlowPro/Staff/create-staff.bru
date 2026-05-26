@@ -1,0 +1,34 @@
+meta {
+  name: Create Staff Member
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/staff
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "Dr Priya Patel",
+    "role": "Cardiologist",
+    "speciality": "Cardiology",
+    "email": "priya@drsharma.com",
+    "phone": "+91 98765 43211",
+    "isActive": true,
+    "acceptsOnlineBooking": true,
+    "calendarColor": "#4F46E5"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("staffId", res.body.id);
+  }
+}

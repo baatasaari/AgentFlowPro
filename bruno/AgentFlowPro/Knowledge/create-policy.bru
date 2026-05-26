@@ -1,0 +1,24 @@
+meta {
+  name: Create Policy Entry
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/knowledge
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "type": "policy",
+    "title": "Cancellation Policy",
+    "content": "Please cancel at least 24 hours before your appointment to avoid a cancellation fee of ₹200. No-show appointments will be charged in full.",
+    "isActive": true
+  }
+}

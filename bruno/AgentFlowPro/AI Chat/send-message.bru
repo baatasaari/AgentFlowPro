@@ -1,0 +1,25 @@
+meta {
+  name: Send Chat Message (Public)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/chat/message
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "token": "{{widgetToken}}",
+    "sessionId": "test-session-abc123",
+    "message": "What services do you offer and what are your timings?"
+  }
+}
+
+docs {
+  Sends a message to the AI agent. The agent uses grounded context
+  (services, FAQs, staff, policies) to respond.
+  sessionId groups messages into a conversation thread.
+}

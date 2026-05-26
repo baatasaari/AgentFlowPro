@@ -1,0 +1,25 @@
+meta {
+  name: Get Plugin Details
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/plugins/whatsapp_business
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Available plugin IDs:
+  - website_scraper
+  - google_calendar
+  - whatsapp_business
+  - razorpay
+  - msg91_sms
+  - zoho_crm
+}

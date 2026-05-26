@@ -1,0 +1,19 @@
+meta {
+  name: Chat - Request Booking
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/chat/message
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "token": "{{widgetToken}}",
+    "sessionId": "test-booking-session-xyz",
+    "message": "I'd like to book a general consultation for tomorrow morning. My name is Rahul Sharma and email is rahul@example.com"
+  }
+}

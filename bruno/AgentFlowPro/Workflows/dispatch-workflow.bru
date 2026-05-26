@@ -1,0 +1,42 @@
+meta {
+  name: Dispatch Workflow (Manual Trigger)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/workflows/dispatch
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "triggerType": "appointment_created",
+    "payload": {
+      "customerName": "Rahul Sharma",
+      "customerPhone": "+919876543210",
+      "customerEmail": "rahul@example.com",
+      "serviceName": "General Consultation",
+      "dateTime": "Monday, 2 June 2026 at 10:00 AM IST",
+      "businessName": "Dr Sharma Clinic",
+      "appointmentId": 42
+    }
+  }
+}
+
+docs {
+  Manually triggers a workflow for testing.
+  triggerType options:
+  - appointment_created
+  - appointment_confirmed
+  - appointment_cancelled
+  - appointment_completed
+  - lead_captured
+  - payment_received
+  - manual
+}

@@ -1,0 +1,22 @@
+meta {
+  name: Cancel Appointment
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/api/appointments/{{appointmentId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "status": "cancelled",
+    "cancellationReason": "Patient requested cancellation"
+  }
+}

@@ -1,0 +1,22 @@
+meta {
+  name: Confirm Appointment
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{baseUrl}}/api/appointments/{{appointmentId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "status": "confirmed",
+    "internalNotes": "Patient confirmed over phone"
+  }
+}

@@ -1,0 +1,30 @@
+meta {
+  name: Get Upcoming Holidays
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/india/holidays
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+params:query {
+  days: 30
+  stateCode: MH
+}
+
+docs {
+  Returns upcoming Indian public holidays.
+  days: number of days to look ahead (default 30)
+
+  stateCode options (optional, for state-specific holidays):
+  MH (Maharashtra), TN (Tamil Nadu), KA (Karnataka),
+  KL (Kerala), WB (West Bengal), GJ (Gujarat),
+  PB (Punjab), HR (Haryana)
+}

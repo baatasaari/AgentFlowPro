@@ -1,0 +1,22 @@
+meta {
+  name: Test Razorpay Connection
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/plugins/razorpay/test
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "keyId": "rzp_test_YOUR_KEY_ID",
+    "keySecret": "YOUR_KEY_SECRET"
+  }
+}

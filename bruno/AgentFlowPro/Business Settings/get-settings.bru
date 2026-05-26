@@ -1,0 +1,15 @@
+meta {
+  name: Get Business Settings
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/business-settings
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

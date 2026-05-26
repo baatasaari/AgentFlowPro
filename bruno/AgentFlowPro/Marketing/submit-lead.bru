@@ -1,0 +1,21 @@
+meta {
+  name: Submit Lead (Landing Page)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/leads
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Vikram Nair",
+    "email": "vikram@nairfitness.com",
+    "phone": "+91 98765 00000",
+    "businessType": "fitness",
+    "message": "I run a gym in Pune and want to automate WhatsApp bookings"
+  }
+}

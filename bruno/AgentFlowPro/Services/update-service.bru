@@ -1,0 +1,22 @@
+meta {
+  name: Update Service
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/api/services/{{serviceId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "price": "600",
+    "durationMinutes": 45
+  }
+}

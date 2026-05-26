@@ -1,0 +1,15 @@
+meta {
+  name: Get Analytics
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/analytics
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

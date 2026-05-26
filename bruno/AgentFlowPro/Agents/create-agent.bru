@@ -1,0 +1,37 @@
+meta {
+  name: Create Agent
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/agents
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "Dr Sharma Clinic Bot",
+    "agentDisplayName": "HealthBot",
+    "businessType": "clinic",
+    "systemPrompt": "You are HealthBot, a friendly AI assistant for Dr Sharma Clinic in Mumbai. Help patients with appointment booking, service information, and general health queries. Always be polite and professional. For medical emergencies, always advise calling 108.",
+    "greetingMessage": "Namaste! 🙏 I'm HealthBot, your AI assistant for Dr Sharma Clinic. How can I help you today? I can help you book an appointment, answer questions about our services, or provide general information.",
+    "primaryColor": "#2563EB",
+    "widgetStyle": "bubble",
+    "position": "bottom-right",
+    "enableBooking": true,
+    "status": "active"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("agentId", res.body.id);
+    bru.setEnvVar("widgetToken", res.body.widgetToken);
+  }
+}

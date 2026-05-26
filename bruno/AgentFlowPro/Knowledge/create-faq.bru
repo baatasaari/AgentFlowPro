@@ -1,0 +1,30 @@
+meta {
+  name: Create FAQ Entry
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/knowledge
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "type": "faq",
+    "question": "What are your clinic timings?",
+    "answer": "We are open Monday to Saturday, 9 AM to 8 PM. Emergency services 24/7.",
+    "isActive": true
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("knowledgeId", res.body.id);
+  }
+}

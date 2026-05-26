@@ -1,0 +1,27 @@
+meta {
+  name: Set Staff Availability
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/api/staff/{{staffId}}/availability
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  [
+    { "dayOfWeek": 1, "startTime": "09:00", "endTime": "17:00", "isActive": true },
+    { "dayOfWeek": 2, "startTime": "09:00", "endTime": "17:00", "isActive": true },
+    { "dayOfWeek": 3, "startTime": "09:00", "endTime": "17:00", "isActive": true },
+    { "dayOfWeek": 4, "startTime": "09:00", "endTime": "17:00", "isActive": true },
+    { "dayOfWeek": 5, "startTime": "09:00", "endTime": "14:00", "isActive": true },
+    { "dayOfWeek": 6, "startTime": "09:00", "endTime": "12:00", "isActive": true },
+    { "dayOfWeek": 0, "startTime": "00:00", "endTime": "00:00", "isActive": false }
+  ]
+}

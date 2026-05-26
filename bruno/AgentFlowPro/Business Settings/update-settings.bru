@@ -1,0 +1,42 @@
+meta {
+  name: Update Business Settings
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{baseUrl}}/api/business-settings
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "businessName": "Dr Sharma Multi-Speciality Clinic",
+    "tagline": "Your Health, Our Priority",
+    "description": "Best multi-speciality clinic in Mumbai offering cardiology, orthopedics, and general medicine.",
+    "phone": "+91 98765 43210",
+    "email": "info@drsharma.com",
+    "address": "15 Linking Road, Bandra West, Mumbai 400050",
+    "city": "Mumbai",
+    "country": "India",
+    "timezone": "Asia/Kolkata",
+    "requirePaymentToBook": false,
+    "cancellationPolicyHours": 24,
+    "bookingAdvanceDays": 30,
+    "autoConfirmBookings": true,
+    "businessHours": {
+      "mon": { "open": "09:00", "close": "20:00" },
+      "tue": { "open": "09:00", "close": "20:00" },
+      "wed": { "open": "09:00", "close": "20:00" },
+      "thu": { "open": "09:00", "close": "20:00" },
+      "fri": { "open": "09:00", "close": "20:00" },
+      "sat": { "open": "09:00", "close": "17:00" },
+      "sun": { "open": "00:00", "close": "00:00", "closed": true }
+    }
+  }
+}

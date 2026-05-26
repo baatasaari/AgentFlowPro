@@ -1,0 +1,23 @@
+meta {
+  name: List Workflow Templates
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/workflow-templates
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Returns 4 pre-built workflow templates:
+  - appointment_confirmation
+  - appointment_reminder
+  - lead_capture_and_notify
+  - payment_request
+}
