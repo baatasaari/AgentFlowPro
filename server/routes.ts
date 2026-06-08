@@ -3,8 +3,12 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertLeadSchema, insertNewsletterSubscriberSchema, insertContactSubmissionSchema } from "@shared/schema";
 import { z } from "zod";
+import { registerCosRoutes } from "./cos-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Chief of Staff agent routes
+  registerCosRoutes(app);
+
   // Lead capture endpoint
   app.post("/api/leads", async (req, res) => {
     try {

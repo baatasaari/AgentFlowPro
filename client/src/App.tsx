@@ -30,6 +30,9 @@ import DiscordIntegration from "@/pages/integrations/DiscordIntegration";
 import LinkedInIntegration from "@/pages/integrations/LinkedInIntegration";
 import CustomIntegration from "@/pages/integrations/CustomIntegration";
 import ABTestDashboard from "@/components/ABTestDashboard";
+import ChiefOfStaff from "@/pages/ChiefOfStaff";
+import ChiefOfStaffAdd from "@/pages/ChiefOfStaffAdd";
+import ChiefOfStaffWeekly from "@/pages/ChiefOfStaffWeekly";
 
 function Router() {
   return (
@@ -76,6 +79,11 @@ function Router() {
       <Route path="/security" component={Security} />
       <Route path="/contact" component={Contact} />
       
+      {/* Chief of Staff Agent */}
+      <Route path="/chief-of-staff" component={ChiefOfStaff} />
+      <Route path="/chief-of-staff/add" component={ChiefOfStaffAdd} />
+      <Route path="/chief-of-staff/weekly" component={ChiefOfStaffWeekly} />
+
       {/* A/B Testing Dashboard (Admin) */}
       <Route path="/admin/ab-testing" component={ABTestDashboard} />
       
