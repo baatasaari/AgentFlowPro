@@ -1,24 +1,19 @@
-import Anthropic from "@anthropic-ai/sdk";
+/**
+ * Chief of Staff agent integration.
+ *
+ * In development / self-hosted: calls the Python ADK FastAPI service at
+ *   AGENT_SERVICE_URL (default http://localhost:8001)
+ *
+ * In production via Vertex AI Agent Engine: calls the deployed engine via
+ *   the streamQuery REST endpoint using Application Default Credentials.
+ *   Set AGENT_ENGINE_RESOURCE_NAME to the full resource name returned by deploy.py.
+ *
+ * Model: Gemini 2.5 Flash Lite via LiteLLM inside the ADK agent.
+ */
+
 import type { CosTask, CosEvent, CosFinanceItem, CosHealthNote } from "@shared/schema";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
-const SYSTEM_PROMPT = `You are Vijay's Personal Chief of Staff.
-Your job is to reduce mental load, protect family priorities, protect financial security, and prevent missed commitments.
-You must be blunt, practical, and concise.
-Always prioritise:
-1. Financial risk
-2. Family commitments
-3. Health and energy
-4. Time-sensitive actions
-5. Long-term goals
-Do not produce motivational fluff.
-Do not create long lists.
-Give the top 3 actions unless there is a genuine emergency.
-For every recommendation, explain the reason in one sentence.
-Always respond with valid JSON only — no markdown, no explanation outside the JSON.`;
+// ─── Shared types (same interface as before — routes are untouched) ────────────
 
 export interface BriefingContext {
   tasks: CosTask[];
@@ -50,64 +45,157 @@ export interface GeneratedBriefing {
   summary: string;
 }
 
-export async function generateDailyBriefing(ctx: BriefingContext): Promise<GeneratedBriefing> {
-  const openTasks = ctx.tasks.filter(t => t.status === "open");
-  const highPriority = openTasks.filter(t => t.priority === "high");
-  const dueSoon = openTasks.filter(t => t.dueDate && t.dueDate <= ctx.date);
-  const riskFinance = ctx.finance.filter(f => f.riskFlag);
+// ─── ADK FastAPI service call (local dev / self-hosted) ───────────────────────
 
-  const userMessage = `Today is ${ctx.date}.
+async function callAdkService(ctx: BriefingContext): Promise<GeneratedBriefing> {
+  const baseUrl = process.env.AGENT_SERVICE_URL ?? "http://localhost:8001";
 
-OPEN TASKS (${openTasks.length} total, ${highPriority.length} high priority):
-${openTasks.slice(0, 10).map(t =>
-  `- [${t.priority.toUpperCase()}] ${t.title} | Category: ${t.category}${t.dueDate ? ` | Due: ${t.dueDate}` : ""}${t.notes ? ` | Note: ${t.notes}` : ""}`
-).join("\n") || "None"}
-
-TODAY'S EVENTS (${ctx.events.length}):
-${ctx.events.map(e =>
-  `- ${e.startTime}: ${e.title}${e.location ? ` @ ${e.location}` : ""} [${e.importance}]`
-).join("\n") || "None"}
-
-RECENT FINANCE ITEMS:
-${ctx.finance.slice(0, 10).map(f =>
-  `- ${f.date}: ${f.merchant} £${f.amount} | ${f.category || "uncategorised"}${f.riskFlag ? " ⚠️ RISK" : ""}${f.notes ? ` | ${f.notes}` : ""}`
-).join("\n") || "None"}
-
-LATEST HEALTH DATA:
-${ctx.health
-  ? `Sleep: ${ctx.health.sleepHours || "?"}h | Steps: ${ctx.health.steps || "?"}${ctx.health.caffeineCount !== null ? ` | Caffeine: ${ctx.health.caffeineCount}` : ""}${ctx.health.notes ? ` | Notes: ${ctx.health.notes}` : ""}`
-  : "No health data logged"}
-
-Return ONLY this JSON (no markdown, no extra text):
-{
-  "greeting": "Good morning, Vijay",
-  "topPriorities": [
-    {"rank": 1, "action": "...", "reason": "..."},
-    {"rank": 2, "action": "...", "reason": "..."},
-    {"rank": 3, "action": "...", "reason": "..."}
-  ],
-  "risks": [
-    {"type": "finance|family|health|work", "description": "...", "urgency": "high|medium|low"}
-  ],
-  "calendarAlert": "..." or null,
-  "moneyWarning": "..." or null,
-  "healthNudge": "..." or null,
-  "summary": "One sentence summary of today's key focus"
-}`;
-
-  const response = await anthropic.messages.create({
-    model: "claude-opus-4-8",
-    max_tokens: 1024,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: userMessage }],
+  const response = await fetch(`${baseUrl}/briefing/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      tasks: ctx.tasks,
+      events: ctx.events,
+      finance: ctx.finance,
+      health: ctx.health,
+      date: ctx.date,
+    }),
   });
 
-  const content = response.content[0];
-  if (content.type !== "text") throw new Error("Unexpected response type from AI");
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(`ADK service error: ${(err as any).detail ?? response.statusText}`);
+  }
 
-  const text = content.text.trim();
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("No JSON found in AI response");
+  return response.json() as Promise<GeneratedBriefing>;
+}
 
-  return JSON.parse(jsonMatch[0]) as GeneratedBriefing;
+// ─── Vertex AI Agent Engine call (production) ─────────────────────────────────
+
+async function getGcpAccessToken(): Promise<string> {
+  // Use Application Default Credentials (workload identity / service account)
+  const metadataUrl =
+    "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token";
+  const r = await fetch(metadataUrl, {
+    headers: { "Metadata-Flavor": "Google" },
+    signal: AbortSignal.timeout(3000),
+  });
+  if (!r.ok) throw new Error("GCP metadata service unavailable");
+  const data = (await r.json()) as { access_token: string };
+  return data.access_token;
+}
+
+async function callAgentEngine(
+  ctx: BriefingContext,
+  resourceName: string
+): Promise<GeneratedBriefing> {
+  // resource name: projects/{PROJECT}/locations/{LOCATION}/reasoningEngines/{ID}
+  const [, , project, , location, , , engineId] = resourceName.split("/");
+  const endpoint = `https://${location}-aiplatform.googleapis.com/v1/${resourceName}:streamQuery`;
+
+  const accessToken = await getGcpAccessToken();
+
+  // Build the same prompt the FastAPI service would pass to the agent
+  const message = buildAgentPrompt(ctx);
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      class_method: "stream_query",
+      input: { message, user_id: "vijay" },
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Agent Engine error ${response.status}: ${text.slice(0, 200)}`);
+  }
+
+  // streamQuery returns newline-delimited JSON events; collect final text
+  const body = await response.text();
+  let finalText = "";
+  for (const line of body.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed === "data: [DONE]") continue;
+    try {
+      const event = JSON.parse(trimmed.replace(/^data:\s*/, ""));
+      const parts = event?.output?.content?.parts ?? event?.content?.parts ?? [];
+      for (const part of parts) {
+        if (part?.text) finalText = part.text; // last wins
+      }
+    } catch {
+      // skip non-JSON lines
+    }
+  }
+
+  if (!finalText) throw new Error("No response content from Agent Engine");
+
+  const match = finalText.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error("Could not parse JSON from Agent Engine response");
+
+  return JSON.parse(match[0]) as GeneratedBriefing;
+}
+
+// ─── Prompt builder (mirrors agent/main.py — used for Agent Engine path) ──────
+
+function buildAgentPrompt(ctx: BriefingContext): string {
+  const openTasks = ctx.tasks.filter(t => t.status === "open");
+  const highCount = openTasks.filter(t => t.priority === "high").length;
+
+  const taskLines = openTasks.slice(0, 10).map(t =>
+    `- [${t.priority.toUpperCase()}] ${t.title} | ${t.category}` +
+    (t.dueDate ? ` | Due: ${t.dueDate}` : "") +
+    (t.notes ? ` | ${t.notes}` : "")
+  ).join("\n") || "None";
+
+  const eventLines = ctx.events.map(e =>
+    `- ${e.startTime}: ${e.title}` +
+    (e.location ? ` @ ${e.location}` : "") +
+    ` [${e.importance}]`
+  ).join("\n") || "None";
+
+  const financeLines = ctx.finance.slice(0, 10).map(f =>
+    `- ${f.date}: ${f.merchant} £${f.amount}` +
+    (f.category ? ` | ${f.category}` : "") +
+    (f.riskFlag ? " ⚠️ RISK" : "") +
+    (f.notes ? ` | ${f.notes}` : "")
+  ).join("\n") || "None";
+
+  const healthLine = ctx.health
+    ? `Sleep: ${ctx.health.sleepHours ?? "?"}h | Steps: ${ctx.health.steps ?? "?"}`
+      + (ctx.health.caffeineCount != null ? ` | Caffeine: ${ctx.health.caffeineCount}` : "")
+      + (ctx.health.notes ? ` | ${ctx.health.notes}` : "")
+    : "No health data logged today";
+
+  return `Today is ${ctx.date}.
+
+OPEN TASKS (${openTasks.length} total, ${highCount} high priority):
+${taskLines}
+
+TODAY'S EVENTS (${ctx.events.length}):
+${eventLines}
+
+RECENT FINANCE (last 14 days):
+${financeLines}
+
+LATEST HEALTH:
+${healthLine}
+
+Generate today's Chief of Staff briefing as strict JSON per your instructions.`;
+}
+
+// ─── Public entry point ───────────────────────────────────────────────────────
+
+export async function generateDailyBriefing(ctx: BriefingContext): Promise<GeneratedBriefing> {
+  const engineResource = process.env.AGENT_ENGINE_RESOURCE_NAME;
+
+  if (engineResource) {
+    return callAgentEngine(ctx, engineResource);
+  }
+
+  return callAdkService(ctx);
 }
