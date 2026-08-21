@@ -14,6 +14,10 @@ export interface ContextFabricConfig {
   M02_ENTITY_RESOLUTION_ENABLED: boolean;
   M03_CONTEXT_STORE_ENABLED:     boolean;
   M04_SIGNAL_BROKER_ENABLED:     boolean;
+  M05_CONTEXT_ASSEMBLER_ENABLED: boolean;
+  M06_SYNTHESIS_ENGINE_ENABLED:  boolean;
+  M07_INFERENCE_ENGINE_ENABLED:  boolean;
+  M08_CONTEXT_SIDECAR_ENABLED:   boolean;
   M18_CONTRACT_REGISTRY_ENABLED: boolean;
 
   // ── Database ──────────────────────────────────────────────────────────────
@@ -48,6 +52,24 @@ export interface ContextFabricConfig {
    * back-pressure. Only relevant for the in-memory default adapter.
    */
   BROKER_MAX_BUFFER: number;
+
+  // ── Synthesis Engine (M06) ────────────────────────────────────────────────
+  /**
+   * Anthropic API key for the synthesis LLM.
+   * Leave empty to disable synthesis (StubLanguageModel is used in tests).
+   */
+  ANTHROPIC_API_KEY:  string;
+  /** Model to use for synthesis. Default: claude-sonnet-5 */
+  ANTHROPIC_MODEL:    string;
+  /** Anthropic API base URL (override for proxies). Default: https://api.anthropic.com */
+  ANTHROPIC_BASE_URL: string;
+
+  // ── Context Sidecar (M08) ────────────────────────────────────────────────
+  /**
+   * Session idle timeout in milliseconds.
+   * Sessions inactive for longer are purged. Default: 1800000 (30 min).
+   */
+  SIDECAR_SESSION_IDLE_MS: number;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -95,6 +117,10 @@ export function loadConfig(): ContextFabricConfig {
     M02_ENTITY_RESOLUTION_ENABLED: boolEnv('MODULE_M02_ENABLED', true),
     M03_CONTEXT_STORE_ENABLED:     boolEnv('MODULE_M03_ENABLED', true),
     M04_SIGNAL_BROKER_ENABLED:     boolEnv('MODULE_M04_ENABLED', true),
+    M05_CONTEXT_ASSEMBLER_ENABLED: boolEnv('MODULE_M05_ENABLED', true),
+    M06_SYNTHESIS_ENGINE_ENABLED:  boolEnv('MODULE_M06_ENABLED', true),
+    M07_INFERENCE_ENGINE_ENABLED:  boolEnv('MODULE_M07_ENABLED', true),
+    M08_CONTEXT_SIDECAR_ENABLED:   boolEnv('MODULE_M08_ENABLED', true),
     M18_CONTRACT_REGISTRY_ENABLED: boolEnv('MODULE_M18_ENABLED', true),
 
     DATABASE_URL: requireEnv('DATABASE_URL'),
@@ -106,6 +132,12 @@ export function loadConfig(): ContextFabricConfig {
     DEFAULT_SIGNAL_TTL_HOURS: numEnv('CF_SIGNAL_TTL_HOURS', 72),
 
     BROKER_MAX_BUFFER: numEnv('CF_BROKER_MAX_BUFFER', 10_000),
+
+    ANTHROPIC_API_KEY:  process.env['CF_ANTHROPIC_API_KEY']  ?? '',
+    ANTHROPIC_MODEL:    process.env['CF_ANTHROPIC_MODEL']    ?? 'claude-sonnet-5',
+    ANTHROPIC_BASE_URL: process.env['CF_ANTHROPIC_BASE_URL'] ?? 'https://api.anthropic.com',
+
+    SIDECAR_SESSION_IDLE_MS: numEnv('CF_SIDECAR_IDLE_MS', 30 * 60 * 1000),
   };
 
   return _config;
