@@ -213,7 +213,12 @@ export class ContextStoreService {
 
   // ── Private helpers ───────────────────────────────────────────────────────
 
-  private async _resolveCanonicalEntity(entityId: string): Promise<string> {
+  private async _resolveCanonicalEntity(entityId: string, depth = 0): Promise<string> {
+    // Guard against pathological merge chains (bugs, cycles).
+    // A merge chain longer than 10 hops indicates a data integrity problem;
+    // return the current ID rather than loop indefinitely.
+    if (depth > 10) return entityId;
+
     const rows = await this.db
       .select()
       .from(cfEntities)
@@ -224,8 +229,8 @@ export class ContextStoreService {
       return entityId;
     }
 
-    // Recursively resolve (handles multi-hop merges, e.g. A→B→C)
-    return this._resolveCanonicalEntity(rows[0].mergedIntoId);
+    // Follow the merge chain (e.g. A→B→C resolves to C)
+    return this._resolveCanonicalEntity(rows[0].mergedIntoId, depth + 1);
   }
 
   private _hydrateSignal(row: DbSignal): Signal {
