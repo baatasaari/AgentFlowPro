@@ -3,8 +3,12 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertLeadSchema, insertNewsletterSubscriberSchema, insertContactSubmissionSchema } from "@shared/schema";
 import { z } from "zod";
+import { mountContextFabricApi } from "../packages/context-fabric/api/index.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // ── Context Fabric Platform API (Phase 1 modules: M01, M02, M03, M04, M18) ──
+  mountContextFabricApi(app);
+
   // Lead capture endpoint
   app.post("/api/leads", async (req, res) => {
     try {
